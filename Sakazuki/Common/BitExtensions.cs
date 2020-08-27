@@ -1,4 +1,4 @@
-namespace Sakazuki
+namespace Sakazuki.Common
 {
     static class BitExtensions
     {

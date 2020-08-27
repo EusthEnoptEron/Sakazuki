@@ -3,7 +3,7 @@ using System.Dynamic;
 using System.Linq;
 using System.Numerics;
 
-namespace Sakazuki.Intermediate
+namespace Sakazuki.Model
 {
     public class Bone
     {

@@ -2,14 +2,8 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace Sakazuki
+namespace Sakazuki.Common
 {
-    public enum Endianness
-    {
-        Little,
-        Big,
-    }
-
     public class EndiannessAwareBinaryReader : BinaryReader
     {
         public Endianness Endianness { get; set; } = Endianness.Little;
@@ -77,5 +71,14 @@ namespace Sakazuki
 
             return bytesRead;
         }
+    }
+}
+
+namespace Sakazuki
+{
+    public enum Endianness
+    {
+        Little,
+        Big,
     }
 }

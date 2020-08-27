@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Sakazuki
+namespace Sakazuki.Common
 {
     static class EnumerableExtensions
     {

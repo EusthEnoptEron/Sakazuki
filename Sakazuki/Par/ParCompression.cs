@@ -2,8 +2,9 @@ using System;
 using System.IO;
 using System.Text;
 using ImageMagick;
+using Sakazuki.Common;
 
-namespace Sakazuki
+namespace Sakazuki.Par
 {
     public static class ParCompression
     {

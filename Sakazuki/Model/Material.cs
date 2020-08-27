@@ -1,6 +1,6 @@
 using System.Linq;
 
-namespace Sakazuki.Intermediate
+namespace Sakazuki.Model
 {
     public class Material
     {

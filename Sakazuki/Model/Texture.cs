@@ -1,4 +1,4 @@
-namespace Sakazuki.Intermediate
+namespace Sakazuki.Model
 {
     public class Texture
     {

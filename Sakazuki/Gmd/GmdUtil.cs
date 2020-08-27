@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 
-namespace Sakazuki
+namespace Sakazuki.Gmd
 {
     public static class GmdUtil
     {

@@ -9,32 +9,10 @@ using System.Text;
 using System.Threading.Tasks;
 using Aethon.IO;
 using MemoryTributaryS;
+using Sakazuki.Common;
 
-namespace Sakazuki
+namespace Sakazuki.Par
 {
-    public struct FileEntry
-    {
-        public string Path;
-        public string Name => System.IO.Path.GetFileName(Path);
-        public uint Size => IsCompressed ? DataCompressedSize : DataUncompressedSize;
-
-        public bool IsCompressed;
-        public uint DataUncompressedSize;
-        public uint DataCompressedSize;
-        public long DataOffset;
-
-        public uint Unknown10;
-        public uint Unknown14;
-        public uint Unknown18;
-        public uint Unknown1C;
-
-
-        public override string ToString()
-        {
-            return this.Path ?? base.ToString();
-        }
-    }
-
     public class ArchiveFile : IDisposable
     {
         private const uint Signature = 1129464144; // 'PARC'
@@ -358,6 +336,13 @@ namespace Sakazuki
             _reader.Dispose();
         }
 
+        public void Save(string path, Endianness endianness = Endianness.Little)
+        {
+            using var fileStream = File.OpenWrite(path);
+            fileStream.SetLength(0);
+            Save(fileStream, endianness);
+        }
+
         public void Save(Stream stream, Endianness endianness = Endianness.Little)
         {
             stream.SetLength(0);
@@ -678,6 +663,29 @@ namespace Sakazuki
                     output.SetLength(0);
                     file.Data.CopyTo(output);
                 });
+        }
+    }
+
+    public struct FileEntry
+    {
+        public string Path;
+        public string Name => System.IO.Path.GetFileName(Path);
+        public uint Size => IsCompressed ? DataCompressedSize : DataUncompressedSize;
+
+        public bool IsCompressed;
+        public uint DataUncompressedSize;
+        public uint DataCompressedSize;
+        public long DataOffset;
+
+        public uint Unknown10;
+        public uint Unknown14;
+        public uint Unknown18;
+        public uint Unknown1C;
+
+
+        public override string ToString()
+        {
+            return this.Path ?? base.ToString();
         }
     }
 }

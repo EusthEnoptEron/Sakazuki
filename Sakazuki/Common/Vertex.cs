@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace Sakazuki
+namespace Sakazuki.Common
 {
     public struct Vertex
     {

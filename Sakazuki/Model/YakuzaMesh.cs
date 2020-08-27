@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using Sakazuki.Common;
+using Sakazuki.Gmd;
 
-namespace Sakazuki.Intermediate
+namespace Sakazuki.Model
 {
     public partial class YakuzaMesh
     {
@@ -446,11 +448,28 @@ namespace Sakazuki.Intermediate
             return (int) ((endPosition - startPosition) / submesh.Vertices.Length);
         }
 
+        public void WriteGmd(Stream stream)
+        {
+            var gmd = ToGmdFile();
+            gmd.Write(stream);
+        }
+
         public static YakuzaMesh FromGmdFile(GmdFile GmdFile)
         {
             var mesh = new YakuzaMesh();
             mesh.LoadGmdFile(GmdFile);
             return mesh;
+        }
+
+        public static YakuzaMesh FromGmdStream(Stream stream)
+        {
+            var gmd = GmdFile.FromStream(stream);
+            return FromGmdFile(gmd);
+        }
+
+        public static YakuzaMesh FromGmdFile(string path)
+        {
+            return FromGmdStream(File.OpenRead(path));
         }
 
         public void CopySkin(Bone[] skin)

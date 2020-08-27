@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using Sakazuki.Common;
 using SharpGLTF.Geometry;
 using SharpGLTF.Geometry.VertexTypes;
 using SharpGLTF.Materials;
@@ -11,7 +12,7 @@ using SharpGLTF.Schema2;
 using SharpGLTF.Validation;
 using AlphaMode = SharpGLTF.Materials.AlphaMode;
 
-namespace Sakazuki.Intermediate
+namespace Sakazuki.Model
 {
     public partial class YakuzaMesh
     {
@@ -182,7 +183,7 @@ namespace Sakazuki.Intermediate
         //     return mesh;
         // }
 
-        public static YakuzaMesh FromGlbFile(string path, string ddsPath = null)
+        public static YakuzaMesh FromGltf2(string path, string ddsPath = null)
         {
             // using var file = File.OpenRead(path);
             // return FromGlb(file);

@@ -5,8 +5,9 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using MemoryTributaryS;
+using Sakazuki.Common;
 
-namespace Sakazuki
+namespace Sakazuki.Gmd
 {
     public class GmdFile
     {

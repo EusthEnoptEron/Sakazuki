@@ -3,7 +3,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
 using Sakazuki;
-using Sakazuki.Intermediate;
+using Sakazuki.Gmd;
+using Sakazuki.Model;
+using Sakazuki.Par;
 
 namespace Pashiri
 {

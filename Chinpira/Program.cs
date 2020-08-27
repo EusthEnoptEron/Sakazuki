@@ -5,7 +5,9 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using Sakazuki;
-using Sakazuki.Intermediate;
+using Sakazuki.Gmd;
+using Sakazuki.Model;
+using Sakazuki.Par;
 
 namespace Chinpira
 {
@@ -37,7 +39,7 @@ namespace Chinpira
                 Directory.Delete("textures", true);
             }
 
-            var mesh1 = YakuzaMesh.FromGlbFile("mesh_edited.glb", "textures");
+            var mesh1 = YakuzaMesh.FromGltf2("mesh_edited.glb", "textures");
             foreach (var file in Directory.EnumerateFiles("textures"))
             {
                 Console.WriteLine($"Adding texture: {Path.GetFileName(file)}");

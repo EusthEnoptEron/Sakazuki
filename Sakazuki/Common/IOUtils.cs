@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace Sakazuki
+namespace Sakazuki.Common
 {
     public static class IOUtils
     {

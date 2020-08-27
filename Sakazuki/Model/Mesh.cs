@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Sakazuki.Intermediate
+namespace Sakazuki.Model
 {
     public class Mesh
     {
