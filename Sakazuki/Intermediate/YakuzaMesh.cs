@@ -18,7 +18,7 @@ namespace Sakazuki.Intermediate
         {
         }
 
-        private void LoadGmdFile(GmdFile2 gmdFile)
+        private void LoadGmdFile(GmdFile gmdFile)
         {
             Name = gmdFile.Name;
 
@@ -85,7 +85,7 @@ namespace Sakazuki.Intermediate
         }
 
 
-        private Bone LoadBone(GmdFile2.BoneTransform boneTransform, Bone parent, GmdFile2 file, Bone[] boneTable)
+        private Bone LoadBone(GmdFile.BoneTransform boneTransform, Bone parent, GmdFile file, Bone[] boneTable)
         {
             var bone = new Bone();
             bone.Id = boneTransform.BoneNo;
@@ -101,31 +101,31 @@ namespace Sakazuki.Intermediate
             return bone;
         }
 
-        private GmdFile2.Mesh.MeshMode GetMode(Mesh mesh)
+        private GmdFile.Mesh.MeshMode GetMode(Mesh mesh)
         {
-            // return GmdFile2.Mesh.MeshMode.Shadow;
+            // return GmdFile.Mesh.MeshMode.Shadow;
 
             if (mesh.Submeshes.Any(m => m.Name.ToLower().Contains("face")))
             {
-                return GmdFile2.Mesh.MeshMode.Face;
+                return GmdFile.Mesh.MeshMode.Face;
             }
 
             if (mesh.Submeshes.Any(m => m.Name.ToLower().Contains("shadow")))
             {
-                return GmdFile2.Mesh.MeshMode.Shadow;
+                return GmdFile.Mesh.MeshMode.Shadow;
             }
 
             if (mesh.Submeshes.Any(m => m.Name.ToLower().Contains("hair")))
             {
-                return GmdFile2.Mesh.MeshMode.Hair;
+                return GmdFile.Mesh.MeshMode.Hair;
             }
 
-            return GmdFile2.Mesh.MeshMode.Body;
+            return GmdFile.Mesh.MeshMode.Body;
         }
 
-        public GmdFile2 ToGmdFile()
+        public GmdFile ToGmdFile()
         {
-            var file = new GmdFile2();
+            var file = new GmdFile();
 
             file.Name = Name;
             // TEXTURES
@@ -134,7 +134,7 @@ namespace Sakazuki.Intermediate
                 .Distinct().ToArray();
 
             file.Textures = textures
-                .Select(GmdFile2.HashedName.FromString)
+                .Select(GmdFile.HashedName.FromString)
                 .ToArray();
 
             var shaders = Materials.Select(mat => mat.Shader).Distinct().ToArray();
@@ -143,7 +143,7 @@ namespace Sakazuki.Intermediate
             // MATERIALS
             file.Materials = Materials.Select(mat =>
             {
-                var material = new GmdFile2.Material()
+                var material = new GmdFile.Material()
                 {
                     Id = mat.Id,
                     TextureIndices =
@@ -175,19 +175,19 @@ namespace Sakazuki.Intermediate
             }).ToArray();
 
             // SHADERS
-            file.Shaders = shaders.Select(shader => GmdFile2.HashedName.FromString(shader)).ToArray();
+            file.Shaders = shaders.Select(shader => GmdFile.HashedName.FromString(shader)).ToArray();
 
             // MESHES
-            var meshes = new List<GmdFile2.Mesh>();
+            var meshes = new List<GmdFile.Mesh>();
             var vertexBuffers = new List<byte[]>();
-            var submeshes = new List<GmdFile2.Submesh>();
-            var indices = new List<GmdFile2.Index>();
-            var boneIndices = new List<GmdFile2.BoneIndex>();
+            var submeshes = new List<GmdFile.Submesh>();
+            var indices = new List<GmdFile.Index>();
+            var boneIndices = new List<GmdFile.BoneIndex>();
 
             for (int i = 0; i < Meshes.Length; i++)
             {
                 var mesh = Meshes[i];
-                var gmdMesh = new GmdFile2.Mesh();
+                var gmdMesh = new GmdFile.Mesh();
                 var firstVertex = mesh.Submeshes.First().Vertices.First();
 
                 gmdMesh.Initialize();
@@ -207,7 +207,7 @@ namespace Sakazuki.Intermediate
                 for (int j = 0; j < mesh.Submeshes.Count; j++)
                 {
                     var submesh = mesh.Submeshes[j];
-                    var gmdSubmesh = new GmdFile2.Submesh();
+                    var gmdSubmesh = new GmdFile.Submesh();
                     var boneIndexList = submesh.Vertices.SelectMany(v => v.BoneIndices ?? Enumerable.Empty<int>()).Distinct().ToList();
 
                     gmdSubmesh.Id = Array.IndexOf(hlSubmeshes, submesh);
@@ -228,12 +228,12 @@ namespace Sakazuki.Intermediate
                     // Fill in indices
                     for (int y = 0; y < submesh.Triangles.GetLength(0); y++)
                     {
-                        indices.Add(new GmdFile2.Index() {Value = submesh.Triangles[y, 0] + gmdSubmesh.BufferOffset2});
-                        indices.Add(new GmdFile2.Index() {Value = submesh.Triangles[y, 1] + gmdSubmesh.BufferOffset2});
-                        indices.Add(new GmdFile2.Index() {Value = submesh.Triangles[y, 2] + gmdSubmesh.BufferOffset2});
+                        indices.Add(new GmdFile.Index() {Value = submesh.Triangles[y, 0] + gmdSubmesh.BufferOffset2});
+                        indices.Add(new GmdFile.Index() {Value = submesh.Triangles[y, 1] + gmdSubmesh.BufferOffset2});
+                        indices.Add(new GmdFile.Index() {Value = submesh.Triangles[y, 2] + gmdSubmesh.BufferOffset2});
                     }
 
-                    boneIndices.AddRange(boneIndexList.Select(idx => new GmdFile2.BoneIndex() {Value = idx}));
+                    boneIndices.AddRange(boneIndexList.Select(idx => new GmdFile.BoneIndex() {Value = idx}));
 
                     submeshes.Add(gmdSubmesh);
                 }
@@ -249,10 +249,10 @@ namespace Sakazuki.Intermediate
             file.Submeshes = submeshes.OrderBy(sm => sm.Id).ToArray();
             file.VertexBuffers = vertexBuffers.ToArray();
             file.BoneIndices = boneIndices.ToArray();
-            file.BoneNames = Bones.Select(b => GmdFile2.HashedName.FromString(b.Name)).ToArray();
+            file.BoneNames = Bones.Select(b => GmdFile.HashedName.FromString(b.Name)).ToArray();
             file.BoneTransforms = Bones.Select(bone =>
             {
-                var bt = new GmdFile2.BoneTransform();
+                var bt = new GmdFile.BoneTransform();
                 bt.Position = bone.WorldMatrix.Translation;
                 bt.LocalPosition = bone.Position;
                 bt.LocalRotation = bone.Rotation;
@@ -268,7 +268,7 @@ namespace Sakazuki.Intermediate
                 if (bone.Name.Contains("[l0]"))
                 {
                     bt.TransformIndex = 0;
-                    bt.NodeType = GmdFile2.BoneTransform.NODE_TYPE_TRANSFORM;
+                    bt.NodeType = GmdFile.BoneTransform.NODE_TYPE_TRANSFORM;
                 }
 
                 // If bone has children, set the nextChildIndex idx
@@ -294,7 +294,7 @@ namespace Sakazuki.Intermediate
             return file;
         }
 
-        private Vertex[] ReadVertices(GmdFile2.Submesh submesh, GmdFile2.Mesh mesh, GmdFile2 file)
+        private Vertex[] ReadVertices(GmdFile.Submesh submesh, GmdFile.Mesh mesh, GmdFile file)
         {
             var vertices = new Vertex[submesh.VertexCount];
             var meshIndex = Array.IndexOf(file.Meshes, mesh);
@@ -373,7 +373,7 @@ namespace Sakazuki.Intermediate
             return vertices;
         }
 
-        private int WriteVertices(BinaryWriter writer, Submesh submesh, GmdFile2.Mesh.MeshMode meshMode, List<int> boneIndices, int boneIndexOffset)
+        private int WriteVertices(BinaryWriter writer, Submesh submesh, GmdFile.Mesh.MeshMode meshMode, List<int> boneIndices, int boneIndexOffset)
         {
             var startPosition = writer.BaseStream.Position;
 
@@ -446,10 +446,10 @@ namespace Sakazuki.Intermediate
             return (int) ((endPosition - startPosition) / submesh.Vertices.Length);
         }
 
-        public static YakuzaMesh FromGmdFile(GmdFile2 gmdFile2)
+        public static YakuzaMesh FromGmdFile(GmdFile GmdFile)
         {
             var mesh = new YakuzaMesh();
-            mesh.LoadGmdFile(gmdFile2);
+            mesh.LoadGmdFile(GmdFile);
             return mesh;
         }
 

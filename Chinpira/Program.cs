@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 using Sakazuki;
 using Sakazuki.Intermediate;
 
@@ -21,15 +22,15 @@ namespace Chinpira
             // var fileName = "c_aw_haruka.gmd";
             // var fileName = "c_am_S03_soutenboripl.gmd";
 
+            
             var kiryu = archiveIn.Find(fileName);
             using var tempFile = new MemoryStream();
-
             archiveIn.Read(kiryu).CopyTo(tempFile);
             tempFile.Seek(0, SeekOrigin.Begin);
 
-            var gmd = GmdFile2.FromStream(tempFile);
+            var gmd = GmdFile.FromStream(tempFile);
             var mesh = YakuzaMesh.FromGmdFile(gmd);
-
+            
             mesh.SaveToGltf2("mesh.glb", ddsPath);
             if (Directory.Exists("textures"))
             {

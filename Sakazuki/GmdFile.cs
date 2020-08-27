@@ -8,7 +8,7 @@ using MemoryTributaryS;
 
 namespace Sakazuki
 {
-    public class GmdFile2
+    public class GmdFile
     {
         private const uint MAGIC = 1296520007;
         private const int VERSION_1 = 33;
@@ -45,21 +45,21 @@ namespace Sakazuki
         public byte[] _unknown15 = new byte[0];
         public byte[] _buffer = new byte[0];
 
-        public GmdFile2()
+        public GmdFile()
         {
             _header.Magic = MAGIC;
             _header.Version1 = VERSION_1;
             _header.Version2 = VERSION_2;
         }
 
-        public static GmdFile2 FromStream(Stream stream)
+        public static GmdFile FromStream(Stream stream)
         {
-            var file = new GmdFile2();
+            var file = new GmdFile();
             file.Read(stream);
             return file;
         }
 
-        public static GmdFile2 FromFile(string file)
+        public static GmdFile FromFile(string file)
         {
             using (var stream = File.OpenRead(file))
             {

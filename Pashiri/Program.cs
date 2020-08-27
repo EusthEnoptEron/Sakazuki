@@ -52,7 +52,7 @@ namespace Pashiri
                         break;
                     case ".gmd":
                         Console.WriteLine($"Exporting {Path.GetFileName(path)}");
-                        var gmdFile = GmdFile2.FromFile(path);
+                        var gmdFile = GmdFile.FromFile(path);
                         var mesh = YakuzaMesh.FromGmdFile(gmdFile);
                         mesh.SaveToGltf2(Path.ChangeExtension(path, ".glb"), FindTextureFolder(path));
                         break;

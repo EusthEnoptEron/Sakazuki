@@ -7,7 +7,7 @@ namespace Sakazuki
 {
     public static class GmdUtil
     {
-        public static GmdFile2.BoneTransform? GetParentBone(GmdFile2.BoneTransform bt, GmdFile2.BoneTransform[] boneTransforms)
+        public static GmdFile.BoneTransform? GetParentBone(GmdFile.BoneTransform bt, GmdFile.BoneTransform[] boneTransforms)
         {
             var searchIdx = bt.BoneNo;
             for (int i = 0; i < boneTransforms.Length; i++)
@@ -27,9 +27,9 @@ namespace Sakazuki
             return null;
         }
 
-        public static GmdFile2.BoneTransform[] GetChildren(GmdFile2.BoneTransform bt, GmdFile2.BoneTransform[] boneTransforms)
+        public static GmdFile.BoneTransform[] GetChildren(GmdFile.BoneTransform bt, GmdFile.BoneTransform[] boneTransforms)
         {
-            var children = new List<GmdFile2.BoneTransform>();
+            var children = new List<GmdFile.BoneTransform>();
 
             if (bt.NextChildIndex >= 0)
             {
