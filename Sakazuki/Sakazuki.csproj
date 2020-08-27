@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <PlatformTarget>AnyCPU</PlatformTarget>
+      <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+      <PlatformTarget>AnyCPU</PlatformTarget>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="DDSReader" Version="1.0.6-pre" />
+      <PackageReference Include="FastStream" Version="1.5.0" />
+      <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="7.16.0" />
+      <PackageReference Include="Markeli.Half" Version="1.0.0" />
+      <PackageReference Include="MemoryTributary" Version="1.0.1" />
+      <PackageReference Include="OpenCvSharp4" Version="4.3.0.20200421" />
+      <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.3.0.20200421" />
+      <PackageReference Include="Pfim" Version="0.9.1" />
+      <PackageReference Include="PooledStream" Version="0.2.1.2" />
+      <PackageReference Include="SharpGLTF.Toolkit" Version="1.0.0-alpha0018" />
+      <PackageReference Include="SmallBlockMemoryStream" Version="1.0.0" />
+      <PackageReference Include="System.Text.Encoding.CodePages" Version="4.7.0" />
+      <PackageReference Include="TeximpNet" Version="1.4.3" />
+    </ItemGroup>
+
+</Project>
