@@ -207,7 +207,7 @@ namespace Sakazuki
         {
             if (_processedEntries.ContainsKey(image.Name)) return;
 
-                var data = LoadImage(image.Content, (ref Vec4b pixel) =>
+            var data = LoadImage(image.Content, (ref Vec4b pixel) =>
             {
                 // Occlusion (R)
                 pixel[1] = pixel[2];
@@ -263,13 +263,22 @@ namespace Sakazuki
             return memory.ToArray();
         }
 
-        public void GenerateMetallicRoughnessOcclusion(string name, float metallic, float roughness, float occlusion)
+        public void GenerateColorTexture(string name, float r, float g, float b)
+        {
+            GenerateSingleColorTexture(name,
+                (byte) (b * 255),
+                (byte) (g * 255),
+                (byte) (r * 255)
+            );
+        }
+
+        private void GenerateSingleColorTexture(string name, byte b, byte g, byte r)
         {
             using var mat = new Mat(4, 4, MatType.CV_8UC4);
             var vec = new Scalar(
-                (byte) ((1 - roughness) * 255),
-                (byte) (occlusion * 255),
-                (byte) (metallic * 255)
+                b,
+                g,
+                r
             );
 
             mat.SetTo(vec);
@@ -287,6 +296,16 @@ namespace Sakazuki
             {
                 File.Delete(tempFile);
             }
+        }
+
+
+        public void GenerateMetallicRoughnessOcclusion(string name, float metallic, float roughness, float occlusion)
+        {
+            GenerateSingleColorTexture(name,
+                (byte) ((1 - roughness) * 255),
+                (byte) (occlusion * 255),
+                (byte) (metallic * 255)
+            );
         }
 
 

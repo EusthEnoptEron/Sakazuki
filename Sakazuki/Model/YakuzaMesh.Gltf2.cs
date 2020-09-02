@@ -81,6 +81,7 @@ namespace Sakazuki.Model
             //     }
             // }
 
+
             if (matDef.MetallicMap != null)
             {
                 var path = converter.GetMetallicRoughnessImage(matDef.MetallicMap);
@@ -212,6 +213,25 @@ namespace Sakazuki.Model
             return bones.ToArray();
         }
 
+        private string GetBaseColorTexture(SharpGLTF.Schema2.Material mat, string ddsPath)
+        {
+            var channel = mat.FindChannel(KnownChannel.BaseColor.ToString());
+            if (channel?.Texture?.PrimaryImage?.Name != null)
+            {
+                return channel.Value.Texture.PrimaryImage.Name;
+            }
+
+            if (ddsPath != null && channel.HasValue)
+            {
+                var filename = $"{Guid.NewGuid().ToString().Substring(0, 8)}.dds";
+                var converter = new ImageConverter(ddsPath);
+                converter.GenerateColorTexture(filename, channel.Value.Parameter.X, channel.Value.Parameter.Y, channel.Value.Parameter.Z);
+
+                return Path.GetFileNameWithoutExtension(filename);
+            }
+
+            return null;
+        }
 
         private string GetRoughnessTexture(SharpGLTF.Schema2.Material mat, string ddsPath)
         {
@@ -250,7 +270,7 @@ namespace Sakazuki.Model
                     Shader = DecodeMaterialName(mat.Name),
                     Textures = new[]
                     {
-                        mat.FindChannel(KnownChannel.BaseColor.ToString())?.Texture?.PrimaryImage?.Name,
+                        GetBaseColorTexture(mat, ddsPath),
                         GetRoughnessTexture(mat, ddsPath),
                         mat.FindChannel(KnownChannel.Normal.ToString())?.Texture?.PrimaryImage?.Name,
                     }
