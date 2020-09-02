@@ -197,7 +197,7 @@ namespace Sakazuki.Model
         {
             var root = new NodeBuilder("Armature");
             var bones = new NodeBuilder[Bones.Length];
-            
+
             foreach (var bone in Bones)
             {
                 var parent = bone.Parent?.Id != null ? bones[bone.Parent.Id] : root;
@@ -240,32 +240,40 @@ namespace Sakazuki.Model
             return null;
         }
 
-        private void LoadGlbFile(string path, string ddsPath = null)
+        private Material CreateMaterial(SharpGLTF.Schema2.Material mat, string ddsPath, int id)
         {
-            var glb = ModelRoot.Load(path);
-
-            Name = Path.GetFileNameWithoutExtension(path);
-            Materials = glb.LogicalMaterials.Select((mat, i) =>
+            if (mat != null)
             {
                 return new Material()
                 {
-                    Id = (uint) i,
+                    Id = (uint) id,
                     Shader = DecodeMaterialName(mat.Name),
-                    Textures = new string[]
+                    Textures = new[]
                     {
                         mat.FindChannel(KnownChannel.BaseColor.ToString())?.Texture?.PrimaryImage?.Name,
                         GetRoughnessTexture(mat, ddsPath),
                         mat.FindChannel(KnownChannel.Normal.ToString())?.Texture?.PrimaryImage?.Name,
                     }
                 };
-            }).ToArray();
-
-            Textures = Materials.SelectMany(mat => mat.Textures).Where(tex => tex != null).Distinct().ToArray();
-
-            if (ddsPath != null)
-            {
-                ConvertTextures(glb, ddsPath);
             }
+            else
+            {
+                return new Material()
+                {
+                    Id = (uint) id,
+                    Shader = PBR_MAT,
+                    Textures = new string[]
+                    {
+                    }
+                };
+            }
+        }
+
+        private void LoadGlbFile(string path, string ddsPath = null)
+        {
+            var glb = ModelRoot.Load(path);
+
+            Name = Path.GetFileNameWithoutExtension(path);
 
             // BONES
             var skin = glb.LogicalSkins[0];
@@ -302,6 +310,7 @@ namespace Sakazuki.Model
                 }
             }
 
+            var materials = new List<Material>();
             Meshes = glb.LogicalMeshes.SelectMany((sm, i) =>
             {
                 return sm.Primitives.Select((primitive, j) =>
@@ -312,12 +321,15 @@ namespace Sakazuki.Model
                     var uvs = primitive.GetVertices("TEXCOORD_0").AsVector2Array();
                     var meshJoints = primitive.GetVertices("JOINTS_0").AsVector4Array();
                     var weights = primitive.GetVertices("WEIGHTS_0").AsVector4Array();
+                    var material = CreateMaterial(primitive.Material, ddsPath, materials.Count);
+
+                    materials.Add(material);
 
                     mesh.Submeshes.Add(new Submesh()
                     {
                         Id = i,
                         Name = sm.Name + "_" + j,
-                        Material = Materials[primitive.Material.LogicalIndex],
+                        Material = material,
                         Triangles = primitive.GetTriangleIndices().Select(t => new[]
                         {
                             t.A, t.B, t.C
@@ -340,7 +352,16 @@ namespace Sakazuki.Model
 
                     return mesh;
                 });
-            }).ToArray();
+            }).Where(m => m != null).ToArray();
+
+
+            Materials = materials.ToArray();
+            Textures = Materials.SelectMany(mat => mat.Textures).Where(tex => tex != null).Distinct().ToArray();
+
+            if (ddsPath != null)
+            {
+                ConvertTextures(glb, ddsPath);
+            }
         }
 
         private void ConvertTextures(ModelRoot glb, string ddsPath)

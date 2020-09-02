@@ -472,25 +472,76 @@ namespace Sakazuki.Model
             return FromGmdStream(File.OpenRead(path));
         }
 
-        public void CopySkin(Bone[] skin)
+        public void CopySkin(Bone[] skin, bool applyTransforms = true, bool fillUp = true)
         {
-            // Bones = skin;
-
+            var bonesClone = new List<Bone>();
             foreach (var bone in skin)
             {
-                int idx = Array.FindIndex(Bones, b => b.Name == bone.Name);
-                if (idx >= 0)
+                var otherBone = Array.Find(Bones, b => b.Name == bone.Name);
+                if (otherBone != null)
                 {
-                    // Replace
-                    Bones[idx].Position = bone.Position;
-                    Bones[idx].Rotation = bone.Rotation;
-                    Bones[idx].Scale = bone.Scale;
+                    if (applyTransforms)
+                    {
+                        // Replace
+                        otherBone.Position = bone.Position;
+                        otherBone.Rotation = bone.Rotation;
+                        otherBone.Scale = bone.Scale;
+                    }
+
+                    bonesClone.Add(otherBone);
                 }
                 else
                 {
-                    Console.Error.WriteLine("Bone not found: " + bone.Name);
+                    if (fillUp)
+                    {
+                        var newBone = new Bone()
+                        {
+                            Id = bonesClone.Count,
+                            Name = bone.Name,
+                            Rotation = Quaternion.Identity,
+                            Scale = Vector3.One,
+                            Position = Vector3.One
+                        };
+                        if (bone.Parent != null)
+                        {
+                            newBone.Parent = bonesClone.Find(b => b.Name == bone.Parent.Name);
+                            newBone.Parent.Children.Add(newBone);
+                        }
+
+                        bonesClone.Add(newBone);
+                    }
+                    else
+                    {
+                        Console.Error.WriteLine("Bone not found: " + bone.Name);
+                    }
                 }
             }
+
+            // Update weights
+            var indexMapping = new Dictionary<int, int>();
+            foreach (var bone in Bones)
+            {
+                var oldIndex = bone.Id;
+                var newIndex = bonesClone.IndexOf(bone);
+                bone.Id = newIndex;
+                indexMapping[oldIndex] = newIndex;
+            }
+
+            foreach (var mesh in Meshes)
+            {
+                foreach (var submesh in mesh.Submeshes)
+                {
+                    for (int i = 0; i < submesh.Vertices.Length; i++)
+                    {
+                        submesh.Vertices[i].BoneIndices[0] = indexMapping[submesh.Vertices[i].BoneIndices[0]];
+                        submesh.Vertices[i].BoneIndices[1] = indexMapping[submesh.Vertices[i].BoneIndices[1]];
+                        submesh.Vertices[i].BoneIndices[2] = indexMapping[submesh.Vertices[i].BoneIndices[2]];
+                        submesh.Vertices[i].BoneIndices[3] = indexMapping[submesh.Vertices[i].BoneIndices[3]];
+                    }
+                }
+            }
+
+            Bones = bonesClone.ToArray();
         }
     }
 }

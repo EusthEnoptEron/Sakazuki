@@ -60,3 +60,8 @@ foreach (var file in Directory.EnumerateFiles("path/to/empty/directory"))
 // Save archive
 archive.Save("path/to/new/archive.par", Endianness.Big);
 ```
+
+# Things to keep in mind
+
+- When importing the models into Blender (preferably 2.90), make sure to to pick "Blender" for the Bone Dir option, otherwise their transforms will be messed up.
+- It seems that Yakuza is very pedantic about the bone structure. Either leave it *exactly* as is, or delete the unneeded ones and use `YakuzaMesh.CopySkin()` to restore the bone structure.
