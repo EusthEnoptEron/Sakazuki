@@ -5,6 +5,7 @@ using System.Linq;
 using System.Numerics;
 using Sakazuki.Common;
 using Sakazuki.Gmd;
+using Sakazuki.Par;
 
 namespace Sakazuki.Model
 {
@@ -47,7 +48,7 @@ namespace Sakazuki.Model
             var bones = new Bone[gmdFile.BoneTransforms.Length];
             foreach (var bt in gmdFile.BoneTransforms)
             {
-                if (GmdUtil.GetParentBone(bt, gmdFile.BoneTransforms) == null)
+                if (GmdUtils.GetParentBone(bt, gmdFile.BoneTransforms) == null)
                 {
                     LoadBone(bt, null, gmdFile, bones);
                 }
@@ -98,7 +99,7 @@ namespace Sakazuki.Model
             bone.Parent = parent;
             boneTable[boneTransform.BoneNo] = bone;
 
-            bone.Children.AddRange(GmdUtil.GetChildren(boneTransform, file.BoneTransforms).Select(bt => LoadBone(bt, bone, file, boneTable)));
+            bone.Children.AddRange(GmdUtils.GetChildren(boneTransform, file.BoneTransforms).Select(bt => LoadBone(bt, bone, file, boneTable)));
 
             return bone;
         }
@@ -308,7 +309,7 @@ namespace Sakazuki.Model
             for (int j = 0; j < submesh.VertexCount; j++)
             {
                 var v = new Vertex();
-                v.Position = GmdUtil.ReadVector3(bs);
+                v.Position = GmdUtils.ReadVector3(bs);
                 if (mesh.HasBones)
                 {
                     v.BoneWeights = new[]
@@ -328,7 +329,7 @@ namespace Sakazuki.Model
                     };
                 }
 
-                v.Normal = GmdUtil.ReadNormal(bs);
+                v.Normal = GmdUtils.ReadNormal(bs);
                 bs.ReadByte();
 
                 if ((mesh.Format >> 12 & 7L) == 7L)
@@ -381,7 +382,7 @@ namespace Sakazuki.Model
 
             foreach (var v in submesh.Vertices)
             {
-                GmdUtil.WriteVector3(v.Position, writer);
+                GmdUtils.WriteVector3(v.Position, writer);
 
                 if (v.BoneIndices != null)
                 {
@@ -396,7 +397,7 @@ namespace Sakazuki.Model
                     writer.Write((byte) (boneIndices.IndexOf(v.BoneIndices[3])));
                 }
 
-                GmdUtil.WriteNormal(v.Normal, writer);
+                GmdUtils.WriteNormal(v.Normal, writer);
                 writer.Write((byte) 0);
 
                 for (int i = 0; i < (int) meshMode; i++)
@@ -454,11 +455,23 @@ namespace Sakazuki.Model
             gmd.Write(stream);
         }
 
+        public byte[] ToGmdBytes()
+        {
+            using var stream = new MemoryStream();
+            WriteGmd(stream);
+            return stream.ToArray();
+        }
+
         public static YakuzaMesh FromGmdFile(GmdFile GmdFile)
         {
             var mesh = new YakuzaMesh();
             mesh.LoadGmdFile(GmdFile);
             return mesh;
+        }
+
+        public static YakuzaMesh FromArchive(string name, ArchiveFile archive)
+        {
+            return FromGmdFile(GmdFile.FromArchive(name, archive));
         }
 
         public static YakuzaMesh FromGmdStream(Stream stream)
@@ -472,12 +485,17 @@ namespace Sakazuki.Model
             return FromGmdStream(File.OpenRead(path));
         }
 
+        private static bool EqualBones(Bone lhs, Bone rhs)
+        {
+            return lhs.Name == rhs.Name;
+        }
+
         public void CopySkin(Bone[] skin, bool applyTransforms = true, bool fillUp = true)
         {
             var bonesClone = new List<Bone>();
             foreach (var bone in skin)
             {
-                var otherBone = Array.Find(Bones, b => b.Name == bone.Name);
+                var otherBone = Array.Find(Bones, b => EqualBones(bone, b));
                 if (otherBone != null)
                 {
                     if (applyTransforms)
@@ -488,10 +506,12 @@ namespace Sakazuki.Model
                         otherBone.Scale = bone.Scale;
                     }
 
+                    otherBone.Name = bone.Name;
                     bonesClone.Add(otherBone);
                 }
                 else
                 {
+                    Console.WriteLine($"Adding bone: {bone.Name}");
                     if (fillUp)
                     {
                         var newBone = new Bone()

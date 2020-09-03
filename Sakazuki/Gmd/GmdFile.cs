@@ -6,6 +6,7 @@ using System.Numerics;
 using System.Text;
 using MemoryTributaryS;
 using Sakazuki.Common;
+using Sakazuki.Par;
 
 namespace Sakazuki.Gmd
 {
@@ -58,6 +59,13 @@ namespace Sakazuki.Gmd
             var file = new GmdFile();
             file.Read(stream);
             return file;
+        }
+
+        public static GmdFile FromArchive(string name, ArchiveFile archive)
+        {
+            var entry = archive.Find(name);
+            using var stream = archive.Read(entry);
+            return FromStream(stream);
         }
 
         public static GmdFile FromFile(string file)

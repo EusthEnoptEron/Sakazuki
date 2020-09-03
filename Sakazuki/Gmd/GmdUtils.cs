@@ -5,8 +5,19 @@ using System.Numerics;
 
 namespace Sakazuki.Gmd
 {
-    public static class GmdUtil
+    public static class GmdUtils
     {
+        public static void PrepareDirectoryForTextures(string directory)
+        {
+            // Recreate
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, true);
+            }
+
+            Directory.CreateDirectory(directory);
+        }
+
         public static GmdFile.BoneTransform? GetParentBone(GmdFile.BoneTransform bt, GmdFile.BoneTransform[] boneTransforms)
         {
             var searchIdx = bt.BoneNo;

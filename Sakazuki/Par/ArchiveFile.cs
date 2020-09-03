@@ -74,6 +74,7 @@ namespace Sakazuki.Par
 
         public void RemoveByPath(string path)
         {
+            path = NormalizePath(path);
             Console.WriteLine("Remove " + path);
 
             _entries.RemoveAll(e => e.Path == path);
@@ -81,6 +82,8 @@ namespace Sakazuki.Par
 
         public void AddFile(string path, byte[] data)
         {
+            path = NormalizePath(path);
+
             var idx = _entries.FindIndex(e => e.Path == path);
 
             FileEntry existingEntry = default;
@@ -91,6 +94,21 @@ namespace Sakazuki.Par
             }
 
             AddFile(path, data, existingEntry);
+        }
+
+        public void AddDirectory(string sourcePath, string destinationPath)
+        {
+            if (!Directory.Exists(sourcePath))
+            {
+                Console.Error.WriteLine("Directory does not exist!");
+                return;
+            }
+
+            foreach (var file in Directory.EnumerateFiles(sourcePath))
+            {
+                Console.WriteLine($"Adding file from directory: {Path.GetFileName(file)}");
+                AddFile(Path.Combine(destinationPath, Path.GetFileName(file)), File.ReadAllBytes(file));
+            }
         }
 
         private void AddFile(string path, byte[] data, FileEntry baseEntry)
@@ -663,6 +681,11 @@ namespace Sakazuki.Par
                     output.SetLength(0);
                     file.Data.CopyTo(output);
                 });
+        }
+
+        private static string NormalizePath(string path)
+        {
+            return path.Replace("/", "\\");
         }
     }
 
