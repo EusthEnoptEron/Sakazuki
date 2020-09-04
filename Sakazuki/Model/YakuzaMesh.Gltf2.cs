@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Text.RegularExpressions;
 using Sakazuki.Common;
 using SharpGLTF.Geometry;
 using SharpGLTF.Geometry.VertexTypes;
@@ -17,35 +18,51 @@ namespace Sakazuki.Model
     public partial class YakuzaMesh
     {
         private const string PBR_MAT = "sd_o1dzt";
+        private Regex MaterialRegex = new Regex(@"^(?<Material>.+)(?:[.][0-9]{2})?\{(?<Shader>[^{}]+)\}$");
 
         private string DecodeMaterialName(string materialName)
         {
             if (materialName == null) return null;
 
-            if (materialName.Contains("="))
+            var match = MaterialRegex.Match(materialName);
+            if (match.Success)
             {
-                var equalSignIdx = materialName.LastIndexOf('=');
-                return materialName.Substring(equalSignIdx + 1);
+                return match.Groups["Material"].Value;
+            }
+
+            // Fallback
+            return "Material";
+        }
+
+        private string DecodeShaderName(string materialName)
+        {
+            if (materialName == null) return null;
+
+            var match = MaterialRegex.Match(materialName);
+            if (match.Success)
+            {
+                return match.Groups["Shader"].Value;
             }
 
             // Fallback
             return PBR_MAT;
         }
 
-        private string EncodeMaterialName(string shadeName, int count)
+        private string EncodeMaterialName(string materialName, string shaderName, int count)
         {
-            return $"mat.{count.ToString().PadLeft(3, '0')}={shadeName}";
+            return $"{materialName}.{count.ToString().PadLeft(2, '0')}{{{shaderName}}}";
         }
 
         private MaterialBuilder InitializeMaterial(Material matDef, MaterialBuilder[] existingMaterials, ImageConverter converter)
         {
-            int count = existingMaterials.Count(mat => DecodeMaterialName(mat?.Name) == matDef.Shader);
-            var mat = new MaterialBuilder(EncodeMaterialName(matDef.Shader, count))
+            var materialName = (matDef.DiffuseMap ?? "Material");
+            int count = existingMaterials.Count(mat => DecodeMaterialName(mat?.Name) == materialName);
+            var mat = new MaterialBuilder(EncodeMaterialName(materialName, matDef.Shader, count))
                 .WithMetallicRoughnessShader();
 
             if (matDef.DiffuseMap != null)
             {
-                var path = converter.GetImage(matDef.DiffuseMap, out var channels);
+                var path = converter.GetImage(matDef.DiffuseMap, matDef.DetailMap, out var channels);
                 if (path != null)
                 {
                     mat.WithChannelImage(KnownChannel.BaseColor, path);
@@ -267,7 +284,7 @@ namespace Sakazuki.Model
                 return new Material()
                 {
                     Id = (uint) id,
-                    Shader = DecodeMaterialName(mat.Name),
+                    Shader = DecodeShaderName(mat.Name),
                     Textures = new[]
                     {
                         GetBaseColorTexture(mat, ddsPath),

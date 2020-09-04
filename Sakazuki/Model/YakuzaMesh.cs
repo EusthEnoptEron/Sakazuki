@@ -21,6 +21,20 @@ namespace Sakazuki.Model
         {
         }
 
+
+        private string GetSubmeshName(string name, List<string> nameList)
+        {
+            var count = nameList.Count(el => el == name);
+            nameList.Add(name);
+
+            if (count > 0)
+            {
+                name += "." + count.ToString().PadLeft(2, '0');
+            }
+
+            return name;
+        }
+
         private void LoadGmdFile(GmdFile gmdFile)
         {
             Name = gmdFile.Name;
@@ -57,11 +71,14 @@ namespace Sakazuki.Model
             Bones = bones.ToArray();
 
 
+            var nameList = new List<string>();
             var meshes = new List<Mesh>();
             foreach (var gmdMesh in gmdFile.Meshes)
             {
                 var mesh = new Mesh();
                 meshes.Add(mesh);
+
+                Console.WriteLine($"------------");
 
                 foreach (var gmdSub in gmdFile.Submeshes.Where(s => s.MeshIndex == gmdMesh.MeshId))
                 {
@@ -69,10 +86,14 @@ namespace Sakazuki.Model
                     mesh.Submeshes.Add(submesh);
 
                     submesh.Id = gmdSub.Id;
-                    submesh.Name = Bones[gmdSub.BoneNo].Name;
+                    submesh.Name = GetSubmeshName(Bones[gmdSub.BoneNo].Name, nameList);
                     submesh.Material = Materials[gmdSub.MaterialIndex];
                     submesh.Vertices = ReadVertices(gmdSub, gmdMesh, gmdFile);
                     submesh.Triangles = new int[gmdSub.IndicesCount / 3, 3];
+
+                    Console.WriteLine(submesh.Name.PadRight(25, ' ')
+                                      + submesh.Material.Shader.PadRight(25, ' ')
+                                      + $"{gmdMesh.HasFlag1} {gmdMesh.HasFlag2} {gmdMesh.HasFlag3}");
 
                     var offset = gmdSub.IndicesOffset;
                     for (int i = 0; i < gmdSub.IndicesCount / 3; i++)
@@ -108,16 +129,19 @@ namespace Sakazuki.Model
         {
             // return GmdFile.Mesh.MeshMode.Shadow;
 
+            // if (mesh.Submeshes.Any(m => m.Material.Shader.Contains("skin")))
             if (mesh.Submeshes.Any(m => m.Name.ToLower().Contains("face")))
             {
                 return GmdFile.Mesh.MeshMode.Face;
             }
 
+            // if (mesh.Submeshes.Any(m => m.Material.Shader == "sd_d1d"))
             if (mesh.Submeshes.Any(m => m.Name.ToLower().Contains("shadow")))
             {
                 return GmdFile.Mesh.MeshMode.Shadow;
             }
 
+            // if (mesh.Submeshes.Any(m => m.Material.Shader.Contains("hair")))
             if (mesh.Submeshes.Any(m => m.Name.ToLower().Contains("hair")))
             {
                 return GmdFile.Mesh.MeshMode.Hair;
@@ -151,7 +175,7 @@ namespace Sakazuki.Model
                     Id = mat.Id,
                     TextureIndices =
                         mat.Textures.Select(tex => (int) (ushort) Array.IndexOf(textures, tex))
-                            .Concat(Enumerable.Repeat(255, 8 - mat.Textures.Length)).ToArray(),
+                            .Concat(Enumerable.Repeat((int) ushort.MaxValue, 8 - mat.Textures.Length)).ToArray(),
                     ShaderIndex = (uint) Array.IndexOf(shaders, mat.Shader),
                     SubmeshIndex = (uint) Array.FindIndex(hlSubmeshes, m => m.Material == mat)
                 };
@@ -167,11 +191,12 @@ namespace Sakazuki.Model
                 material.TextureIndices[0] = material.TextureIndices[0] >= 255 ? Array.IndexOf(textures, "dummy_black") : material.TextureIndices[0];
                 material.TextureIndices[1] = material.TextureIndices[1] >= 255 ? Array.IndexOf(textures, "default_z") : material.TextureIndices[1];
                 material.TextureIndices[2] = material.TextureIndices[2] >= 255 ? Array.IndexOf(textures, "dummy_nmap") : material.TextureIndices[2];
-                material.TextureIndices[3] = Array.IndexOf(textures, "dummy_white");
-                material.TextureIndices[4] = Array.IndexOf(textures, "default_z");
-                material.TextureIndices[5] = Array.IndexOf(textures, "noise");
-                material.TextureIndices[6] = 255;
-                material.TextureIndices[7] = 255;
+                material.TextureIndices[3] = material.TextureIndices[3] >= 255 ? Array.IndexOf(textures, "dummy_white") : material.TextureIndices[3];
+                material.TextureIndices[4] = material.TextureIndices[4] >= 255 ? Array.IndexOf(textures, "default_z") : material.TextureIndices[4];
+                material.TextureIndices[5] = material.TextureIndices[5] >= 255 ? Array.IndexOf(textures, "noise") : material.TextureIndices[5];
+                material.TextureIndices[6] = material.TextureIndices[6] >= 255 ? ushort.MaxValue : material.TextureIndices[6]; //ushort.MaxValue;
+                material.TextureIndices[7] = material.TextureIndices[7] >= 255 ? ushort.MaxValue : material.TextureIndices[7]; //ushort.MaxValue;
+                // ushort.MaxValue
 
                 material.Initialize();
                 return material;
@@ -199,7 +224,7 @@ namespace Sakazuki.Model
                 gmdMesh.Offset = vertexBuffers.Sum(b => b.Length);
                 gmdMesh.UvLayers = firstVertex.UvLayerCount;
                 gmdMesh.HasBones = firstVertex.BoneIndices != null;
-                gmdMesh.Mode = GetMode(mesh);
+                gmdMesh.FlagCount = GmdUtils.GetFlagCount(mesh.Submeshes.First().Material.Shader);
                 // gmdMesh.Format = mesh.Format;
 
                 using var buffer = new MemoryStream();
@@ -223,7 +248,7 @@ namespace Sakazuki.Model
                     gmdSubmesh.BoneIndexOffset = boneIndices.Count;
                     gmdSubmesh.BoneIndexCount = boneIndexList.Count;
 
-                    gmdMesh.Stride = WriteVertices(writer, submesh, gmdMesh.Mode, boneIndexList, boneIndices.Count);
+                    gmdMesh.Stride = WriteVertices(writer, submesh, gmdMesh.FlagCount, boneIndexList, boneIndices.Count);
 
                     boneIndexList.Insert(0, gmdSubmesh.BoneIndexCount); // Expects count in index list
                     vertexCount += submesh.Vertices.Length;
@@ -332,17 +357,22 @@ namespace Sakazuki.Model
                 v.Normal = GmdUtils.ReadNormal(bs);
                 bs.ReadByte();
 
-                if ((mesh.Format >> 12 & 7L) == 7L)
+                if (mesh.HasFlag1)
+                {
+                    var a = bs.ReadByteAsFloat();
+                    var b = bs.ReadByteAsFloat();
+                    var c = bs.ReadByteAsFloat();
+                    var d = bs.ReadByteAsFloat();
+                    // Console.WriteLine($"{a:0.00} / {b:0.00} / {c:0.00} / {d:0.00}");
+                    // bs.ReadInt32();
+                }
+
+                if (mesh.HasFlag2)
                 {
                     bs.ReadInt32();
                 }
 
-                if ((mesh.Format >> 21 & 7L) == 7L)
-                {
-                    bs.ReadInt32();
-                }
-
-                if ((mesh.Format >> 24 & 7L) == 7L)
+                if (mesh.HasFlag3)
                 {
                     bs.ReadInt32();
                 }
@@ -376,7 +406,7 @@ namespace Sakazuki.Model
             return vertices;
         }
 
-        private int WriteVertices(BinaryWriter writer, Submesh submesh, GmdFile.Mesh.MeshMode meshMode, List<int> boneIndices, int boneIndexOffset)
+        private int WriteVertices(BinaryWriter writer, Submesh submesh, int flagCount, List<int> boneIndices, int boneIndexOffset)
         {
             var startPosition = writer.BaseStream.Position;
 
@@ -400,9 +430,12 @@ namespace Sakazuki.Model
                 GmdUtils.WriteNormal(v.Normal, writer);
                 writer.Write((byte) 0);
 
-                for (int i = 0; i < (int) meshMode; i++)
+                for (int i = 0; i < flagCount; i++)
                 {
-                    writer.Write(0);
+                    writer.Write((byte) 255);
+                    writer.Write((byte) 255);
+                    writer.Write((byte) 255);
+                    writer.Write((byte) 255);
                 }
 
                 // writer.Write(100);

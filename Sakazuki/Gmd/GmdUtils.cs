@@ -7,6 +7,38 @@ namespace Sakazuki.Gmd
 {
     public static class GmdUtils
     {
+        private static Dictionary<string, int> SHADER_TO_FLAGS = new Dictionary<string, int>
+        {
+            {"sd_c1dzt[hair][vcol][ao]", 2},
+            {"sd_o1dztt_m2t[skin]", 3},
+            {"sd_o1dzt", 1},
+            {"sd_o1dzt[eye]", 1},
+            {"sd_o1dzt[mouth]", 1},
+            {"sd_d1dzt", 1},
+            {"sd_c1dzt[hair]", 1},
+            {"sd_o1dzt_m2t", 1},
+            {"sd_o1dzt_m2dzt", 1},
+            {"sd_o1dzt_m2t[skin]", 1},
+            {"sd_d1d", 0},
+            {"sd_b1dz[glass]", 0},
+            {"sd_p1dzt", 1},
+        };
+
+        /// <summary>
+        /// Until I figured out what those flags actually do...
+        /// </summary>
+        /// <param name="shaderName"></param>
+        /// <returns></returns>
+        public static int GetFlagCount(string shaderName)
+        {
+            if (SHADER_TO_FLAGS.TryGetValue(shaderName, out var count))
+            {
+                return count;
+            }
+
+            return 1;
+        }
+
         public static void PrepareDirectoryForTextures(string directory)
         {
             // Recreate

@@ -30,6 +30,7 @@ namespace Sakazuki.Gmd
         public byte[][] VertexBuffers = new byte[0][];
         public HashedName[] Shaders = new HashedName[0];
         public string Name = "";
+        private static bool UseSingleByteIndices;
 
         /// <summary>
         /// The length of this is BoneTransforms.length - (count where supplementary index >= 0)
@@ -86,6 +87,7 @@ namespace Sakazuki.Gmd
             stream.Seek(0, SeekOrigin.Begin);
 
             _header = Header.ReadStatic(reader);
+            UseSingleByteIndices = _header.UseSingleByteIndices;
 
             Name = _header.SceneName;
             Textures = ReadArray<HashedName>(reader, _header.TextureOffset, _header.TextureCount);
@@ -93,7 +95,7 @@ namespace Sakazuki.Gmd
             Meshes = ReadArray<Mesh>(reader, _header.MeshOffset, _header.MeshCount);
             Submeshes = ReadArray<Submesh>(reader, _header.SubmeshOffset, _header.SubmeshCount);
 
-            BoneIndices = ReadArray<BoneIndex>(reader, _header.BoneIndexOffset, Header.UseSingleByteIndices
+            BoneIndices = ReadArray<BoneIndex>(reader, _header.BoneIndexOffset, UseSingleByteIndices
                 ? _header.BoneIndexBlockSize
                 : _header.BoneIndexBlockSize / 2);
 
@@ -220,6 +222,7 @@ namespace Sakazuki.Gmd
         public void Write(Stream stream)
         {
             EnsureCoherency();
+            UseSingleByteIndices = false;
 
             var writer = new BinaryWriter(stream, Encoding.Default, true);
             stream.SetLength(0);
@@ -228,6 +231,7 @@ namespace Sakazuki.Gmd
             // _header.Write(writer);
             var originalHeader = _header;
             _header.SceneName = Name;
+            _header.UseSingleByteIndices = UseSingleByteIndices;
 
             _header.TextureCount = Textures.Length;
             _header.TextureOffset = (int) WriteArray(writer, Textures);
@@ -238,7 +242,7 @@ namespace Sakazuki.Gmd
             _header.SubmeshCount = Submeshes.Length;
             _header.SubmeshOffset = (int) WriteArray(writer, Submeshes);
 
-            _header.BoneIndexBlockSize = Header.UseSingleByteIndices ? BoneIndices.Length : BoneIndices.Length * 2;
+            _header.BoneIndexBlockSize = UseSingleByteIndices ? BoneIndices.Length : BoneIndices.Length * 2;
             _header.BoneIndexOffset = (int) WriteArray(writer, BoneIndices);
 
             _header.BoneMatCount = BoneTransforms.Length;
@@ -453,7 +457,7 @@ namespace Sakazuki.Gmd
             public int Count14;
             public int Offset15;
             public int Count15;
-            public static bool UseSingleByteIndices;
+            public bool UseSingleByteIndices;
 
             public static Header ReadStatic(BinaryReader reader)
             {
@@ -738,7 +742,7 @@ namespace Sakazuki.Gmd
 
             void IReadable.Read(BinaryReader reader)
             {
-                if (Header.UseSingleByteIndices)
+                if (UseSingleByteIndices)
                 {
                     Value = reader.ReadByte();
 
@@ -754,7 +758,7 @@ namespace Sakazuki.Gmd
 
             public void Write(BinaryWriter writer)
             {
-                if (Header.UseSingleByteIndices)
+                if (UseSingleByteIndices)
                 {
                     writer.Write((byte) Value);
                 }
@@ -842,31 +846,35 @@ namespace Sakazuki.Gmd
                 }
             }
 
-            public MeshMode Mode
+            public bool HasFlag1 => (Format >> 12 & 7L) == 7L;
+            public bool HasFlag2 => (Format >> 21 & 7L) == 7L;
+            public bool HasFlag3 => (Format >> 24 & 7L) == 7L;
+
+            public int FlagCount
             {
                 get
                 {
                     int no = 0;
-                    if ((Format >> 13 & 7L) == 7L)
+                    if (HasFlag1)
                     {
                         no++;
                     }
 
-                    if ((Format >> 21 & 7L) == 7L)
+                    if (HasFlag2)
                     {
                         no++;
                     }
 
-                    if ((Format >> 24 & 7L) == 7L)
+                    if (HasFlag3)
                     {
                         no++;
                     }
 
-                    return (MeshMode) no;
+                    return no;
                 }
                 set
                 {
-                    int no = (int) value;
+                    int no = value;
                     Format &= ~(0b111 << 13); // Reset 
                     Format &= ~(0b111 << 21);
                     Format &= ~(0b111 << 24);
@@ -884,11 +892,6 @@ namespace Sakazuki.Gmd
                     if (no > 2)
                     {
                         Format |= (0b111 << 13); // Set
-                    }
-
-                    if (value != Mode)
-                    {
-                        throw new Exception("Not true!");
                     }
                 }
             }
@@ -941,7 +944,7 @@ namespace Sakazuki.Gmd
                 TriangleStrip2Count = reader.ReadInt32(); // May be 0
                 TriangleStrip2Offset = reader.ReadInt32(); // May be 0
                 BoneIndexCount = reader.ReadInt32();
-                BoneIndexOffset = Header.UseSingleByteIndices ? reader.ReadInt32() : reader.ReadInt32() / 2;
+                BoneIndexOffset = UseSingleByteIndices ? reader.ReadInt32() : reader.ReadInt32() / 2;
 
                 // Don't seem to do anything (i.e. can be 0)
                 BoneNo = reader.ReadInt32();
@@ -970,7 +973,7 @@ namespace Sakazuki.Gmd
                 writer.Write(TriangleStrip2Count);
                 writer.Write(TriangleStrip2Offset);
                 writer.Write(BoneIndexCount);
-                writer.Write(Header.UseSingleByteIndices ? BoneIndexOffset : BoneIndexOffset * 2);
+                writer.Write(UseSingleByteIndices ? BoneIndexOffset : BoneIndexOffset * 2);
                 writer.Write(BoneNo);
                 writer.Write(Unknown1Offset);
                 writer.Write(BufferOffset1);
@@ -1302,6 +1305,13 @@ namespace Sakazuki.Gmd
             {
                 writer.Write((ushort) Value);
             }
+        }
+
+        public byte[] ToBytes()
+        {
+            using var stream = new MemoryStream();
+            Write(stream);
+            return stream.ToArray();
         }
     }
 }

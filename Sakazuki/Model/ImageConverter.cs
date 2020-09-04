@@ -44,8 +44,13 @@ namespace Sakazuki
         }
 
 
-        public string GetImage(string imageName, out int channels)
+        public string GetImage(string imageName, string detailImage, out int channels)
         {
+            // if (detailImage != null && detailImage.EndsWith("_rd"))
+            // {
+            //     imageName = detailImage;
+            // }
+
             return GetImage(imageName, out channels, null);
         }
 
@@ -233,7 +238,7 @@ namespace Sakazuki
 
         private unsafe byte[] LoadImage(MemoryImage image, FilterFunc filter = null)
         {
-            using var originalMat = Mat.FromImageData(image.Content.ToArray());
+            using var originalMat = Mat.FromImageData(image.Content.ToArray(), ImreadModes.Unchanged);
             using var mat = originalMat.Flip(FlipMode.X);
 
             if (filter != null)
@@ -320,7 +325,7 @@ namespace Sakazuki
                     albedo.Resize((int) Math.Round(albedo.Width * factor.Value), (int) Math.Round(albedo.Height * factor.Value), ImageFilter.Lanczos3);
                 }
 
-                compressor.Compression.Format = CompressionFormat.DXT1;
+                compressor.Compression.Format = CompressionFormat.DXT5;
                 compressor.Compression.Quality = CompressionQuality.Normal;
                 compressor.Input.SetMipmapGeneration(true);
                 compressor.Input.MipmapFilter = MipmapFilter.Kaiser;
