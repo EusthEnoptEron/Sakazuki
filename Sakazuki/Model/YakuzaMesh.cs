@@ -78,7 +78,7 @@ namespace Sakazuki.Model
                 var mesh = new Mesh();
                 meshes.Add(mesh);
 
-                Console.WriteLine($"------------");
+                // Console.WriteLine($"------------");
 
                 foreach (var gmdSub in gmdFile.Submeshes.Where(s => s.MeshIndex == gmdMesh.MeshId))
                 {
@@ -91,9 +91,9 @@ namespace Sakazuki.Model
                     submesh.Vertices = ReadVertices(gmdSub, gmdMesh, gmdFile);
                     submesh.Triangles = new int[gmdSub.IndicesCount / 3, 3];
 
-                    Console.WriteLine(submesh.Name.PadRight(25, ' ')
-                                      + submesh.Material.Shader.PadRight(25, ' ')
-                                      + $"{gmdMesh.HasFlag1} {gmdMesh.HasFlag2} {gmdMesh.HasFlag3}");
+                    // Console.WriteLine(submesh.Name.PadRight(25, ' ')
+                    //                   + submesh.Material.Shader.PadRight(25, ' ')
+                    //                   + $"{gmdMesh.HasFlag1} {gmdMesh.HasFlag2} {gmdMesh.HasFlag3}");
 
                     var offset = gmdSub.IndicesOffset;
                     for (int i = 0; i < gmdSub.IndicesCount / 3; i++)
@@ -191,11 +191,11 @@ namespace Sakazuki.Model
                 material.TextureIndices[0] = material.TextureIndices[0] >= 255 ? Array.IndexOf(textures, "dummy_black") : material.TextureIndices[0];
                 material.TextureIndices[1] = material.TextureIndices[1] >= 255 ? Array.IndexOf(textures, "default_z") : material.TextureIndices[1];
                 material.TextureIndices[2] = material.TextureIndices[2] >= 255 ? Array.IndexOf(textures, "dummy_nmap") : material.TextureIndices[2];
-                material.TextureIndices[3] = material.TextureIndices[3] >= 255 ? Array.IndexOf(textures, "dummy_white") : material.TextureIndices[3];
-                material.TextureIndices[4] = material.TextureIndices[4] >= 255 ? Array.IndexOf(textures, "default_z") : material.TextureIndices[4];
-                material.TextureIndices[5] = material.TextureIndices[5] >= 255 ? Array.IndexOf(textures, "noise") : material.TextureIndices[5];
-                material.TextureIndices[6] = material.TextureIndices[6] >= 255 ? ushort.MaxValue : material.TextureIndices[6]; //ushort.MaxValue;
-                material.TextureIndices[7] = material.TextureIndices[7] >= 255 ? ushort.MaxValue : material.TextureIndices[7]; //ushort.MaxValue;
+                // material.TextureIndices[3] = material.TextureIndices[3] >= 255 ? Array.IndexOf(textures, "dummy_white") : material.TextureIndices[3];
+                // material.TextureIndices[4] = material.TextureIndices[4] >= 255 ? Array.IndexOf(textures, "default_z") : material.TextureIndices[4];
+                // material.TextureIndices[5] = material.TextureIndices[5] >= 255 ? Array.IndexOf(textures, "noise") : material.TextureIndices[5];
+                // material.TextureIndices[6] = material.TextureIndices[6] >= 255 ? ushort.MaxValue : material.TextureIndices[6]; //ushort.MaxValue;
+                // material.TextureIndices[7] = material.TextureIndices[7] >= 255 ? ushort.MaxValue : material.TextureIndices[7]; //ushort.MaxValue;
                 // ushort.MaxValue
 
                 material.Initialize();
@@ -335,7 +335,7 @@ namespace Sakazuki.Model
             {
                 var v = new Vertex();
                 v.Position = GmdUtils.ReadVector3(bs);
-                if (mesh.HasBones)
+                if (mesh.HasBones && file.BoneIndices.Length > 0)
                 {
                     v.BoneWeights = new[]
                     {

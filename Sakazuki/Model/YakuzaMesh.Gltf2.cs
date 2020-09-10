@@ -18,6 +18,8 @@ namespace Sakazuki.Model
     public partial class YakuzaMesh
     {
         private const string PBR_MAT = "sd_o1dzt";
+        private const string UNLIT_MAT = "sd_d1d";
+
         private Regex MaterialRegex = new Regex(@"^(?<Material>.+)(?:[.][0-9]{2})?\{(?<Shader>[^{}]+)\}$");
 
         private string DecodeMaterialName(string materialName)
@@ -125,40 +127,62 @@ namespace Sakazuki.Model
             int meshId = 0;
             foreach (var mesh in Meshes)
             {
-                Console.WriteLine("Process mesh " + meshId);
+                // Console.WriteLine("Process mesh " + meshId);
                 int counter = 0;
                 foreach (var submesh in mesh.Submeshes)
                 {
-                    var glbMesh = new MeshBuilder<VertexPositionNormal, VertexTexture1, VertexJoints4>($"{submesh.Name}");
                     var mat = materials[submesh.Material.Id] ?? InitializeMaterial(submesh.Material, materials, converter);
                     materials[submesh.Material.Id] = mat;
 
-                    var primitive = glbMesh.UsePrimitive(mat);
-                    var vertices = submesh.Vertices
-                        .Select(v => new VertexBuilder<VertexPositionNormal, VertexTexture1, VertexJoints4>(
-                            new VertexPositionNormal(v.Position, v.Normal),
-                            new VertexTexture1(new Vector2(v.Uv0.X, 1 - v.Uv0.Y)),
-                            new VertexJoints4(
-                                (v.BoneIndices[0], v.BoneWeights[0]),
-                                (v.BoneIndices[1], v.BoneWeights[1]),
-                                (v.BoneIndices[2], v.BoneWeights[2]),
-                                (v.BoneIndices[3], v.BoneWeights[3])
-                            )
-                        )).ToArray();
 
-                    var t = submesh.Triangles;
-                    for (int i = 0; i < t.GetLength(0); i++)
+                    if (submesh.Vertices.FirstOrDefault().BoneIndices != null)
                     {
-                        primitive.AddTriangle(vertices[t[i, 0]], vertices[t[i, 1]], vertices[t[i, 2]]);
-                    }
+                        var glbMesh = new MeshBuilder<VertexPositionNormal, VertexTexture1, VertexJoints4>($"{submesh.Name}");
+                        var primitive = glbMesh.UsePrimitive(mat);
 
-                    scene.AddSkinnedMesh(glbMesh, null, Matrix4x4.Identity, skin);
+                        var vertices = submesh.Vertices
+                            .Select(v => new VertexBuilder<VertexPositionNormal, VertexTexture1, VertexJoints4>(
+                                new VertexPositionNormal(v.Position, v.Normal),
+                                new VertexTexture1(new Vector2(v.Uv0.X, 1 - v.Uv0.Y)),
+                                new VertexJoints4(
+                                    (v.BoneIndices[0], v.BoneWeights[0]),
+                                    (v.BoneIndices[1], v.BoneWeights[1]),
+                                    (v.BoneIndices[2], v.BoneWeights[2]),
+                                    (v.BoneIndices[3], v.BoneWeights[3])
+                                )
+                            )).ToArray();
+                        var t = submesh.Triangles;
+                        for (int i = 0; i < t.GetLength(0); i++)
+                        {
+                            primitive.AddTriangle(vertices[t[i, 0]], vertices[t[i, 1]], vertices[t[i, 2]]);
+                        }
+
+                        scene.AddSkinnedMesh(glbMesh, null, Matrix4x4.Identity, skin);
+                    }
+                    else
+                    {
+                        var glbMesh = new MeshBuilder<VertexPositionNormal, VertexTexture1, VertexEmpty>($"{submesh.Name}");
+                        var primitive = glbMesh.UsePrimitive(mat);
+
+                        var vertices = submesh.Vertices
+                            .Select(v => new VertexBuilder<VertexPositionNormal, VertexTexture1, VertexEmpty>(
+                                new VertexPositionNormal(v.Position, v.Normal),
+                                new VertexTexture1(new Vector2(v.Uv0.X, 1 - v.Uv0.Y))
+                            )).ToArray();
+                        var t = submesh.Triangles;
+                        for (int i = 0; i < t.GetLength(0); i++)
+                        {
+                            primitive.AddTriangle(vertices[t[i, 0]], vertices[t[i, 1]], vertices[t[i, 2]]);
+                        }
+
+                        scene.AddRigidMesh(glbMesh, null, Matrix4x4.Identity);
+                    }
                 }
 
                 meshId++;
             }
 
-            Console.WriteLine("Save...");
+            // Console.WriteLine("Save...");
             var gltf2 = scene.ToGltf2();
 
             // Fix skin
@@ -242,7 +266,8 @@ namespace Sakazuki.Model
             {
                 var filename = $"{Guid.NewGuid().ToString().Substring(0, 8)}.dds";
                 var converter = new ImageConverter(ddsPath);
-                converter.GenerateColorTexture(filename, channel.Value.Parameter.X, channel.Value.Parameter.Y, channel.Value.Parameter.Z);
+                converter.GenerateColorTexture(filename, channel.Value.Parameter.X, channel.Value.Parameter.Y, channel.Value.Parameter.Z,
+                    channel.Value.Parameter.W);
 
                 return Path.GetFileNameWithoutExtension(filename);
             }

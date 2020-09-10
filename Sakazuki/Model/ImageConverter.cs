@@ -79,7 +79,7 @@ namespace Sakazuki
                     return null;
                 }
 
-                Console.WriteLine($"Converting {imageName}...");
+                // Console.WriteLine($"Converting {imageName}...");
 
                 using var surface = Pfim.Pfim.FromFile(fullPath);
 
@@ -268,22 +268,24 @@ namespace Sakazuki
             return memory.ToArray();
         }
 
-        public void GenerateColorTexture(string name, float r, float g, float b)
+        public void GenerateColorTexture(string name, float r, float g, float b, float a = 1.0f)
         {
             GenerateSingleColorTexture(name,
                 (byte) (b * 255),
                 (byte) (g * 255),
-                (byte) (r * 255)
+                (byte) (r * 255),
+                (byte) (a * 255)
             );
         }
 
-        private void GenerateSingleColorTexture(string name, byte b, byte g, byte r)
+        private void GenerateSingleColorTexture(string name, byte b, byte g, byte r, byte a = 255)
         {
             using var mat = new Mat(4, 4, MatType.CV_8UC4);
             var vec = new Scalar(
                 b,
                 g,
-                r
+                r,
+                a
             );
 
             mat.SetTo(vec);
