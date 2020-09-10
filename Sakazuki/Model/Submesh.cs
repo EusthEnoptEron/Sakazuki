@@ -1,3 +1,4 @@
+using System.Numerics;
 using Sakazuki.Common;
 
 namespace Sakazuki.Model
@@ -9,5 +10,7 @@ namespace Sakazuki.Model
         public Material Material { get; set; }
         public int[,] Triangles { get; set; }
         public Vertex[] Vertices { get; set; }
+
+        public Matrix4x4 Transform { get; set; }
     }
 }

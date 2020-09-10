@@ -87,6 +87,7 @@ namespace Sakazuki.Model
 
                     submesh.Id = gmdSub.Id;
                     submesh.Name = GetSubmeshName(Bones[gmdSub.BoneNo].Name, nameList);
+                    submesh.Transform = Bones[gmdSub.BoneNo].WorldMatrix;
                     submesh.Material = Materials[gmdSub.MaterialIndex];
                     submesh.Vertices = ReadVertices(gmdSub, gmdMesh, gmdFile);
                     submesh.Triangles = new int[gmdSub.IndicesCount / 3, 3];

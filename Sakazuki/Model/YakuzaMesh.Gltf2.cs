@@ -139,7 +139,6 @@ namespace Sakazuki.Model
                     {
                         var glbMesh = new MeshBuilder<VertexPositionNormal, VertexTexture1, VertexJoints4>($"{submesh.Name}");
                         var primitive = glbMesh.UsePrimitive(mat);
-
                         var vertices = submesh.Vertices
                             .Select(v => new VertexBuilder<VertexPositionNormal, VertexTexture1, VertexJoints4>(
                                 new VertexPositionNormal(v.Position, v.Normal),
@@ -175,7 +174,7 @@ namespace Sakazuki.Model
                             primitive.AddTriangle(vertices[t[i, 0]], vertices[t[i, 1]], vertices[t[i, 2]]);
                         }
 
-                        scene.AddRigidMesh(glbMesh, null, Matrix4x4.Identity);
+                        scene.AddRigidMesh(glbMesh, null, submesh.Transform);
                     }
                 }
 
