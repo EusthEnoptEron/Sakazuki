@@ -94,6 +94,7 @@ namespace Sakazuki
                 Array.Copy(surface.Data, offset, data, 0, length);
                 var mat = new Mat();
 
+                // Console.WriteLine(imageName + " - " + surface.Format);
                 if (surface.Format == ImageFormat.Rgb24)
                 {
                     mat = new Mat(height, width, MatType.CV_8UC3, data);
@@ -156,19 +157,49 @@ namespace Sakazuki
                 mt.r = metallic?
                 mt.b = roughness?
                 */
+
+            var hasMetallic = imageName.EndsWith("_tn");
             return GetImage(imageName, out var _, (ref Vec4b pixel) =>
             {
-                // b => g
-                // g => r
-                // r => b
-                // Occlusion (R)
-                pixel[2] = pixel[1];
+                var r = pixel[2];
+                var g = pixel[1];
+                var b = pixel[0];
 
-                // Roughness (G)
-                pixel[1] = (byte) (255 - pixel[0]);
+                if (hasMetallic)
+                {
+                    // b => g
+                    // g => r
+                    // r => b
+                    // Occlusion (R)
+                    pixel[2] = g;
 
-                // Metallic (B)
-                pixel[0] = pixel[2];
+                    // Roughness (G)
+                    pixel[1] = (byte) (255 - b);
+
+                    // Metallic (B)
+                    pixel[0] = r;
+                }
+                else
+                {
+                    // b => g
+                    // g => r
+                    // r => b
+                    // Occlusion (R)
+                    pixel[2] = r;
+
+                    // Roughness (G)
+                    pixel[1] = (byte) (255 - g);
+
+                    // Metallic (B)
+                    pixel[0] = 0;
+
+                    /*
+                    // Roughness (G)
+                    pixel[1] = b;
+
+                    // Metallic (B)
+                    pixel[0] = g;*/
+                }
             });
         }
 
@@ -214,14 +245,18 @@ namespace Sakazuki
 
             var data = LoadImage(image.Content, (ref Vec4b pixel) =>
             {
+                var r = pixel[2];
+                var g = pixel[1];
+                var b = pixel[0];
+
                 // Occlusion (R)
-                pixel[1] = pixel[2];
+                pixel[1] = r;
 
                 // Roughness (G)
-                pixel[0] = (byte) (255 - pixel[1]);
+                pixel[0] = (byte) (255 - g);
 
                 // Metallic (B)
-                pixel[2] = pixel[0];
+                pixel[2] = b;
             });
             var tempFile = Path.GetTempFileName();
             try
