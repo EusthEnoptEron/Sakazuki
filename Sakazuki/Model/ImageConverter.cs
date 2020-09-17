@@ -158,7 +158,7 @@ namespace Sakazuki
                 mt.b = roughness?
                 */
 
-            var hasMetallic = imageName.EndsWith("_tn");
+            var hasMetallic = imageName.EndsWith("_mt");
             return GetImage(imageName, out var _, (ref Vec4b pixel) =>
             {
                 var r = pixel[2];
