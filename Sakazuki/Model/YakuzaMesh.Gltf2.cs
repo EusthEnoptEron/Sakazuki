@@ -5,6 +5,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text.RegularExpressions;
 using Sakazuki.Common;
+using Sakazuki.Gmd;
 using SharpGLTF.Geometry;
 using SharpGLTF.Geometry.VertexTypes;
 using SharpGLTF.Materials;
@@ -17,9 +18,6 @@ namespace Sakazuki.Model
 {
     public partial class YakuzaMesh
     {
-        private const string PBR_MAT = "sd_o1dzt";
-        private const string UNLIT_MAT = "sd_d1d";
-
         private Regex MaterialRegex = new Regex(@"^(?<Material>.+)(?:[.][0-9]{2})?\{(?<Shader>[^{}]+)\}$");
 
         private string DecodeMaterialName(string materialName)
@@ -47,7 +45,7 @@ namespace Sakazuki.Model
             }
 
             // Fallback
-            return PBR_MAT;
+            return GmdUtils.PBR_MAT;
         }
 
         private string EncodeMaterialName(string materialName, string shaderName, int count)
@@ -322,7 +320,7 @@ namespace Sakazuki.Model
                 return new Material()
                 {
                     Id = (uint) id,
-                    Shader = PBR_MAT,
+                    Shader = GmdUtils.PBR_MAT,
                     Textures = new string[]
                     {
                     }

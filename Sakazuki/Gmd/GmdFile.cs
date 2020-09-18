@@ -43,7 +43,7 @@ namespace Sakazuki.Gmd
 
         public Unknown12Struct[] _submeshBonesMeta = new Unknown12Struct[0];
 
-        public byte[] _unknown13 = new byte[0];
+        public Unknown13Struct[] _unknown13 = new Unknown13Struct[0];
         public byte[] _unknown14 = new byte[0];
         public byte[] _unknown15 = new byte[0];
         public byte[] _buffer = new byte[0];
@@ -128,66 +128,10 @@ namespace Sakazuki.Gmd
 
             // The value range correlates to the number of submeshes
             _submeshBonesMeta = ReadArray<Unknown12Struct>(reader, _header.Offset12, _header.Count12 / 8);
-            // for (int j = 0; j < _unknown12.Length; j++)
-            // {
-            //     _unknown12[j].Unknown1 = 0;
-            //     _unknown12[j].Unknown2 = 0;
-            //     _unknown12[j].Unknown3 = 0;
-            // }
-
-
-            // _unknown12[4].Unknown1 = 0;
-            // _unknown12[4].Unknown2 = 0;
-            // _unknown12[4].Unknown3 = 0;
-            // // _unknown12 = _unknown12.Reverse().ToArray();
-
-
-            // for (int j = 0; j < _unknown12.Length; j += 4)
-            // {
-            //     var offset = j * 4;
-            //     if (_unknown1.All(o => o.Offset != offset))
-            //     {
-            //         _unknown12[j].U1 = 50;
-            //         _unknown12[j + 1].U1 = 50;
-            //         _unknown12[j + 2].U1 = 50;
-            //         _unknown12[j + 3].U1 = 50;
-            //     }
-            // }
-            // 0 => Chin bone to floor
-            // // 1 => Normal
-            // // 2 => Normal
-            // // 3 => Normal
-            // _unknown12 = new Unknown12Struct[_unknown12.Length - 7];
-            // 0 => crash, 4 => crash, 8 => crash, 12 => no crash, 32 => crash
-            // _unknown12[1].U1 = 50;
-            // _unknown12[2].U1 = 5;
-            // _unknown12[3].U1 = 50;
-            // _unknown12[5].U1 = 50;
-            // _unknown12[12].U1 = 50;
-
-
-            // for (int j = 0; j < _unknown12.Length / 2; j++)
-            // {
-            //     // if (_unknown12[j].U1 != max)
-            //     {
-            //         _unknown12[j].U1 = 0;
-            //     }
-            // }
-
-            //
-            // for (i = 0; i < _unknown12.Length; i++)
-            // {
-            //     _unknown12[i] = 0;
-            // }
-            // for (ushort j = 0; j < BoneNames.Length; j++)
-            // {
-            //     BoneNames[j].Id = j;
-            // }
-
 
             // _unknown12[_unknown1[Submeshes[9].Unknown1Offset].Offset / 8].Unknown3 = 10;
             _unknown4 = ReadBuffer(reader, _header.Offset04, _header.Count04, 0x10);
-            _unknown13 = ReadBuffer(reader, _header.Offset13, _header.Count13, 0x40);
+            _unknown13 = ReadArray<Unknown13Struct>(reader, _header.Offset13, _header.Count13);
             _unknown14 = ReadBuffer(reader, _header.Offset14, _header.Count14, 0x40);
             _unknown15 = ReadBuffer(reader, _header.Offset15, _header.Count15, 0x40);
         }
@@ -217,6 +161,10 @@ namespace Sakazuki.Gmd
                 Unknown2 = (short) j,
                 Unknown3 = (short) j
             }).ToArray();
+
+            _unknown13 = Materials.Select(_ => Unknown13Struct.Create()).ToArray();
+            _unknown4 = new byte[16];
+            _unknown4[11] = 255;
         }
 
         public void Write(Stream stream)
@@ -286,14 +234,25 @@ namespace Sakazuki.Gmd
             _header.Count12 = _submeshBonesMeta.Length * 8;
             _header.Offset12 = (int) WriteArray(writer, _submeshBonesMeta);
 
+            // Required for transparent materials
+            // _unknown4 = _unknown4[0..0x10];
+            // _unknown4[11] = 255;
+
+            _header.Count04 = 1;
+            _header.Offset04 = (int) WriteBuffer(writer, _unknown4);
+            _header.Count13 = _unknown13.Length;
+            _header.Offset13 = (int) WriteArray(writer, _unknown13);
+            // _header.Offset14 = (int) WriteBuffer(writer, _unknown14);
+            // _header.Offset15 = (int) WriteBuffer(writer, _unknown15);
+
             // Purge unimportant unknowns
             var end = writer.BaseStream.Position.Aligned(Alignment);
-            _header.Count04 = 0;
-            _header.Count13 = 0;
+            // _header.Count04 = 0;
+            // _header.Count13 = 0;
             _header.Count14 = 0;
             _header.Count15 = 0;
-            _header.Offset04 = (int) end;
-            _header.Offset13 = (int) end;
+            // _header.Offset04 = (int) end;
+            // _header.Offset13 = (int) end;
             _header.Offset14 = (int) end;
             _header.Offset15 = (int) end;
             _header.Unk01 = 0;
@@ -669,18 +628,28 @@ namespace Sakazuki.Gmd
 
             public uint Id { get; set; }
 
-            public void Initialize()
+            public bool HasAlpha
+            {
+                get => Unknown2 != 0;
+                set => Unknown2 = HasAlpha ? 0x100 : 0;
+            }
+
+            public int Unknown2 { get; set; } // 0 = Opaque / 0x100 = transparent
+
+
+            public void Initialize(bool supportTransparency)
             {
                 Header = new[]
                 {
                     1,
                     7,
-                    0x10000,
-                    0
+                    supportTransparency ? 0x2010000 : 0x10000
+                    // 0x2010000, // 0x10000 = Additive?, 0x2010000 = Fade
                 };
 
                 Footer = new uint[16];
                 Unknown1 = 0;
+                Unknown2 = supportTransparency ? 0x100 : 0;
             }
 
             void IReadable.Read(BinaryReader reader)
@@ -695,8 +664,10 @@ namespace Sakazuki.Gmd
                     reader.ReadInt32(), // 1 or 2, 0, makes mesh invisible
                     reader.ReadInt32(), // 7 seems to work?
                     reader.ReadInt32(), // has to be 0x10000 or strange things happen
-                    reader.ReadInt32() // 0 seems to be ok?
+                    // reader.ReadInt32() // 0 seems to be ok?
                 };
+
+                Unknown2 = reader.ReadInt32();
 
                 TextureIndices = new int[]
                 {
@@ -723,14 +694,13 @@ namespace Sakazuki.Gmd
 
             public void Write(BinaryWriter writer)
             {
-                Initialize();
-
                 writer.Write(Id);
                 writer.Write(Unknown1);
                 writer.Write(ShaderIndex);
                 writer.Write(SubmeshIndex);
 
                 writer.Write(Header);
+                writer.Write(Unknown2);
                 writer.Write(TextureIndices);
                 writer.Write(Footer);
             }
@@ -777,14 +747,6 @@ namespace Sakazuki.Gmd
             public int Offset;
             public long Format;
             public int Count;
-
-            public enum MeshMode
-            {
-                Shadow = 0,
-                Body = 1, // => 1 flag
-                Hair = 2, // => 2 flags
-                Face = 3 // => 3 flags
-            }
 
             /*
              *  000010000011000000000001111111111000011 //UV1 / 32
@@ -881,7 +843,7 @@ namespace Sakazuki.Gmd
 
                     if (no > 0)
                     {
-                        Format |= (0b111 << 24); // Set
+                        Format |= (0b111 << 13); // Set
                     }
 
                     if (no > 1)
@@ -891,7 +853,7 @@ namespace Sakazuki.Gmd
 
                     if (no > 2)
                     {
-                        Format |= (0b111 << 13); // Set
+                        Format |= (0b111 << 24); // Set
                     }
                 }
             }
@@ -930,6 +892,14 @@ namespace Sakazuki.Gmd
             public int BoneNo;
             public int Unknown1Offset;
 
+            private void Initialize()
+            {
+                BufferOffset1 = 0;
+                TriangleStrip2Count = 0;
+                TriangleStrip2Offset = 0;
+                TriangleStripCount = 0;
+                TriangleStripOffset = 0;
+            }
 
             void IReadable.Read(BinaryReader reader)
             {
@@ -956,11 +926,7 @@ namespace Sakazuki.Gmd
 
             public void Write(BinaryWriter writer)
             {
-                BufferOffset1 = 0;
-                TriangleStrip2Count = 0;
-                TriangleStrip2Offset = 0;
-                TriangleStripCount = 0;
-                TriangleStripOffset = 0;
+                Initialize();
 
                 writer.Write(Id);
                 writer.Write(MaterialIndex);
@@ -1292,6 +1258,32 @@ namespace Sakazuki.Gmd
             }
         }
 
+        public struct Unknown13Struct : IReadable, IWritable
+        {
+            public ushort[] Data;
+
+            public static Unknown13Struct Create()
+            {
+                return new Unknown13Struct()
+                {
+                    Data = new ushort[32]
+                };
+            }
+
+            public void Read(BinaryReader reader)
+            {
+                Data = Enumerable.Range(0, 32).Select(_ => reader.ReadUInt16()).ToArray();
+            }
+
+            public void Write(BinaryWriter writer)
+            {
+                foreach (var val in Data)
+                {
+                    writer.Write(val);
+                }
+            }
+        }
+
         public struct Index : IReadable, IWritable
         {
             public int Value;
@@ -1312,6 +1304,12 @@ namespace Sakazuki.Gmd
             using var stream = new MemoryStream();
             Write(stream);
             return stream.ToArray();
+        }
+
+        public static GmdFile FromBytes(byte[] bytes)
+        {
+            using var stream = new MemoryStream(bytes);
+            return FromStream(stream);
         }
     }
 }

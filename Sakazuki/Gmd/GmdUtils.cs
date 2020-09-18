@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,6 +8,10 @@ namespace Sakazuki.Gmd
 {
     public static class GmdUtils
     {
+        public const string PBR_MAT = "sd_o1dzt";
+        public const string TRANSPARENCY_MAT = "sd_d1dzt_m2dzt";
+        public const string UNLIT_MAT = "sd_d1d";
+
         private static Dictionary<string, int> SHADER_TO_FLAGS = new Dictionary<string, int>
         {
             {"sd_d1dzt", 1},
@@ -56,6 +61,7 @@ namespace Sakazuki.Gmd
                 return count;
             }
 
+            Console.Error.WriteLine($"Did not find flags for {shaderName}");
             return 1;
         }
 
