@@ -170,7 +170,7 @@ namespace Sakazuki.Gmd
         public void Write(Stream stream)
         {
             EnsureCoherency();
-            UseSingleByteIndices = false;
+            UseSingleByteIndices = BoneIndices.Max(bi => bi.Value) < 255;
 
             var writer = new BinaryWriter(stream, Encoding.Default, true);
             stream.SetLength(0);
